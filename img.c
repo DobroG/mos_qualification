@@ -1,4 +1,5 @@
 #include "img.h"
+#define SMALL unsigned short
 
 void pbm_image_free(PbmImage* img) {
 	free(img->data);
@@ -16,9 +17,14 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	char* allData = (char*) malloc(length + 1);
 	fread(allData, length, 1, stream);
 
-	unsigned short lineCounter = 1;
+	SMALL lineCounter = 1;
 
-	unsigned short magicNumberCharCounter = 0;
+	SMALL magicNumberCharCounter = 0;
+	SMALL isStartOfLine = 0;
+	SMALL isCommentLine = 0;
+	SMALL isSizeLine = 1;
+	SMALL isIntensityLine = 1;
+	SMALL isDataLine = 1;
 
 	for (int i = 0; i < length; i++) {
 
@@ -27,11 +33,70 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 			magicNumberCharCounter++;
 		}
 
+		if (isStartOfLine && allData[i] == PBM_COMMENT_CHAR) { // check if comment line
+			isCommentLine = 1;
+		}
+
+		if (!isCommentLine && lineCounter != 1) {
+			if (isSizeLine) {
+				// read size
+				SMALL j = i;
+
+				char* widthHeightLine = (char*) malloc(10); // size limited to 99999x9999 or similar
+				SMALL widthHeightLineCounter = 0;
+
+				while (allData[j] != '\x0A') {
+					widthHeightLine[widthHeightLineCounter] = allData[j];
+					widthHeightLineCounter++;
+					j++;
+				}
+				widthHeightLineCounter++;
+				widthHeightLine[widthHeightLineCounter] = '\0';
+
+				// find index of ' '
+				char *res = strstr(widthHeightLine, " ");
+				int sizeOfWidth = res - widthHeightLine; // position of space
+				int sizeOfHeight = widthHeightLineCounter - sizeOfWidth - 1;
+
+				char* width = (char*) malloc(sizeOfWidth);
+				char* height = (char*) malloc(sizeOfHeight);
+
+				for (int i = 0; i < sizeOfWidth; i++) {
+					width[i] = widthHeightLine[i];
+				}
+
+				for (int i = 0; i < sizeOfHeight; i++) {
+					height[i] = widthHeightLine[sizeOfWidth + i + 1];
+				}
+
+				int w = atoi(width);
+				int h = atoi(height);
+
+				result->width = w;
+				result->height = h;
+
+				free(width);
+				free(height);
+				free(widthHeightLine);
+				isSizeLine = 0;
+				i = j;
+			} else if (isIntensityLine) {
+				// read intensity
+				isIntensityLine = 0;
+			} else {
+				// read data
+				isDataLine = 0;
+			}
+		}
+
 		printf("%c", allData[i]);
 
 		if (allData[i] == '\x0A') {
 			lineCounter++;
+			isStartOfLine = 1;
+			isCommentLine = 0;
 		}
+
 	}
 
 	return result;

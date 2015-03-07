@@ -13,8 +13,8 @@ int main(int argc, char* argv[]) {
 	FILE* fp = fopen(argv[1], "rb");
 
 	PbmImage* image = pbm_image_load_from_stream(fp, 0); // TODO: check error
-	fclose(fp);
 
+	fclose(fp);
 	pbm_image_free(image);
 
 	return 0;
