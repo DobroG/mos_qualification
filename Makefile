@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-I. -g
 DEPS = flip.h img.h
 OBJ = flip.o img.o 
 

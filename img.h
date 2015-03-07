@@ -1,6 +1,7 @@
 #ifndef IMG_H_
 #define IMG_H_
 #include <stdio.h>
+#include <stdlib.h>
 /**
 *  @brief In memory representation of an PBM image
 */
