@@ -112,13 +112,24 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				free(intensityLine);
 				isIntensityLine = 0;
 				i = j;
-			} else {
+			} else if (isDataLine) {
 				// read data
+				SMALL j = i;
+
+				int dataSize = (result->height * result->width);
+				char* dataLine = (char*) malloc(dataSize);
+
+				for (int i = 0; i < dataSize; i++) {
+					dataLine[i] = allData[j];
+					j++;
+				}
+
+				result->data = dataLine;
+
 				isDataLine = 0;
+				i = j;
 			}
 		}
-
-		printf("%c", allData[i]);
 
 		if (allData[i] == '\x0A') {
 			lineCounter++;
