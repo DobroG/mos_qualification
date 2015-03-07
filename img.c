@@ -16,7 +16,25 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	char* allData = (char*) malloc(length + 1);
 	fread(allData, length, 1, stream);
 
- 	return result;
+	unsigned short lineCounter = 1;
+
+	unsigned short magicNumberCharCounter = 0;
+
+	for (int i = 0; i < length; i++) {
+
+		if (lineCounter == 1) { // magic number line
+			result->type[magicNumberCharCounter] = allData[i];
+			magicNumberCharCounter++;
+		}
+
+		printf("%c", allData[i]);
+
+		if (allData[i] == '\x0A') {
+			lineCounter++;
+		}
+	}
+
+	return result;
 }
 
 int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
