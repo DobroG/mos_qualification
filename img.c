@@ -143,5 +143,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 }
 
 int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
+
+
 	return 0;
 }
