@@ -82,7 +82,36 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				i = j;
 			} else if (isIntensityLine) {
 				// read intensity
+				SMALL j = i;
+
+				char* intensityLine = (char*) malloc(10);
+				SMALL intensityLineCounter = 0;
+
+				while (allData[j] != '\x0A') {
+					intensityLine[intensityLineCounter] = allData[j];
+					intensityLineCounter++;
+					j++;
+				}
+				intensityLine[intensityLineCounter] = 'n';
+
+				char *res = strstr(intensityLine, "n");
+				int pos = res - intensityLine;
+				char* intensity = (char*) malloc(pos);
+
+				for (int i = 0; i < pos; i++) {
+					intensity[i] = intensityLine[i];
+				}
+
+				int intensityValue = atoi(intensity);
+
+				if (intensityValue != 255) {
+					*error = RET_INVALID_FORMAT;
+				}
+
+				free(intensity);
+				free(intensityLine);
 				isIntensityLine = 0;
+				i = j;
 			} else {
 				// read data
 				isDataLine = 0;
