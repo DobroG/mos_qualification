@@ -14,7 +14,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	length = ftell(stream);
 	fseek(stream, 0, SEEK_SET);
 
-	char* allData = (char*) malloc(length + 1);
+	char* allData = (char*) calloc(length + 1, 1);
 	fread(allData, length, 1, stream);
 
 	SMALL lineCounter = 1;
@@ -42,7 +42,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				// read size
 				SMALL j = i;
 
-				char* widthHeightLine = (char*) malloc(10); // size limited to 99999x9999 or similar
+				char* widthHeightLine = (char*) calloc(10, 1); // size limited to 99999x9999 or similar
 				SMALL widthHeightLineCounter = 0;
 
 				while (allData[j] != '\x0A') {
@@ -58,8 +58,8 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				int sizeOfWidth = res - widthHeightLine; // position of space
 				int sizeOfHeight = widthHeightLineCounter - sizeOfWidth - 1;
 
-				char* width = (char*) malloc(sizeOfWidth);
-				char* height = (char*) malloc(sizeOfHeight);
+				char* width = (char*) calloc(sizeOfWidth, sizeof(int));
+				char* height = (char*) calloc(sizeOfHeight, sizeof(int));
 
 				for (int i = 0; i < sizeOfWidth; i++) {
 					width[i] = widthHeightLine[i];
@@ -96,7 +96,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 				char *res = strstr(intensityLine, "n");
 				int pos = res - intensityLine;
-				char* intensity = (char*) malloc(pos);
+				char* intensity = (char*) calloc(pos, sizeof(int));
 
 				for (int i = 0; i < pos; i++) {
 					intensity[i] = intensityLine[i];
@@ -139,11 +139,11 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 	}
 
+	free(allData);
 	return result;
 }
 
 int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
-
 
 	return 0;
 }
