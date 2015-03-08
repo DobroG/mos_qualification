@@ -168,13 +168,19 @@ int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
 
 	// magicNumber + widthDigits + space + heightDigits + line break + opacity ( + data)
 	int imgDataSize = img->width * img->height;
-	int sizeOfData = 3 + widthDigits + 1 + heightDigits + 1 + 4 + imgDataSize;
+	int sizeOfData = 3 + 18 + widthDigits + 1 + heightDigits + 1 + 4
+			+ imgDataSize;
 
 	char* dataToWrite = (char*) calloc(sizeOfData, 1);
 
 	// put magic number into data
 	memcpy(dataToWrite, img->type, 3);
 	offset += 3;
+
+	// power by
+	char powerdBy[] = "#powered by IMS14\n";
+	memcpy(&dataToWrite[offset], powerdBy, 18);
+	offset += 18;
 
 	// put dimensions into data
 	memcpy(&dataToWrite[offset], dimensions_w, widthDigits);
