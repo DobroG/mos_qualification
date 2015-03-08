@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 /**
  *  @brief In memory representation of an PBM image
  */
@@ -56,5 +57,14 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error);
  * @return  RET_PBM_OK if the write was successfull or RET_PBM_ERROR if an error occured.
  */
 int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream);
+
+/*
+ * states for stream-reading state machine
+ */
+#define STATE_READING_MAGIC_NUMBER 1
+#define STATE_READING_COMMENT_LINE 2
+#define STATE_READING_SIZE 3
+#define STATE_READING_INTENSITY 4
+#define STATE_READING_DATA 5
 
 #endif

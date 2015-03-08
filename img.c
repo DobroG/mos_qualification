@@ -1,9 +1,24 @@
 #include "img.h"
+
 #define SMALL unsigned short
 
 void pbm_image_free(PbmImage* img) {
 	free(img->data);
 	free(img);
+}
+
+int validateMagicNumber(char* magicNumber) {
+	if (magicNumber[0] != 'P') {
+		return RET_INVALID_FORMAT;
+	}
+
+	if (magicNumber[1] != '1' && magicNumber[1] != '2' && magicNumber[1] != '3'
+			&& magicNumber[1] != '4' && magicNumber[1] != '5'
+			&& magicNumber[1] != '6') {
+		return RET_UNSUPPORTED_FILE_FORMAT;
+	}
+
+	return RET_PBM_OK;
 }
 
 PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
@@ -13,129 +28,50 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 		exit(RET_OUT_OF_MEMORY);
 	}
 
-	unsigned long lengthOfStream;
+	unsigned int lastByteIndexOfStream;
 	fseek(stream, 0, SEEK_END);
-	lengthOfStream = ftell(stream);
+	lastByteIndexOfStream = ftell(stream);
 	fseek(stream, 0, SEEK_SET);
 
-	char* allData = (char*) calloc(lengthOfStream + 1, 1);
-	if (allData == NULL) {
-		printf("Error allocating memory.");
-		exit(RET_OUT_OF_MEMORY);
-	}
+	unsigned int lengthOfStream = lastByteIndexOfStream + 1;
 
-	fread(allData, lengthOfStream, 1, stream);
+	SMALL isNewLine = false;
+	unsigned char currentChar;
+	int state = STATE_READING_MAGIC_NUMBER; // initial state
 
-	SMALL lineCounter = 1;
+	printf("Length of stream: %d\n", lengthOfStream);
 
-	SMALL magicNumberCharCounter = 0;
-	SMALL isStartOfLine = 0;
-	SMALL isCommentLine = 0;
-	SMALL isSizeLine = 1;
-	SMALL isIntensityLine = 1;
-	SMALL isDataLine = 1;
+	// helpers
+	char tmpMagicNumber[3];
+	memset(tmpMagicNumber, 0, 3);
+	int tmpMagicNumberCounter = 0;
 
-	for (int i = 0; i < lengthOfStream; i++) {
+	for (int i = 0; i < lastByteIndexOfStream; i++) {
+		fread(&currentChar, 1, 1, stream);
+		printf("%c", currentChar);
 
-		if (lineCounter == 1) { // magic number line
-			result->type[magicNumberCharCounter] = allData[i];
-			magicNumberCharCounter++;
+		if (currentChar == '\n') {
+			isNewLine = true;
 		}
 
-		if (isStartOfLine && allData[i] == PBM_COMMENT_CHAR) { // check if comment line
-			isCommentLine = 1;
-		}
-
-		if (!isCommentLine && lineCounter != 1) {
-			if (isSizeLine) {
-				// read size
-				SMALL j = i;
-
-				char widthHeightLine[10]; // size limited to 99999x9999 or similar
-				memset(widthHeightLine, 0, 10);
-				SMALL widthHeightLineCounter = 0;
-
-				while (allData[j] != '\x0A') {
-					widthHeightLine[widthHeightLineCounter] = allData[j];
-					widthHeightLineCounter++;
-					j++;
-				}
-				widthHeightLineCounter++;
-				widthHeightLine[widthHeightLineCounter] = '\0';
-
-				// find index of ' '
-				char *res = strstr(widthHeightLine, " ");
-				int sizeOfWidth = res - widthHeightLine; // position of space
-				int sizeOfHeight = widthHeightLineCounter - sizeOfWidth - 1;
-
-				char width[sizeOfWidth * sizeof(int)];
-				memset(width, 0, sizeOfWidth * sizeof(int));
-				char height[sizeOfHeight * sizeof(int)];
-				memset(height, 0, sizeOfHeight * sizeof(int));
-
-				memcpy(width, widthHeightLine, sizeOfWidth);
-				memcpy(height, &widthHeightLine[sizeOfWidth + 1], sizeOfHeight);
-
-				result->width = atoi(width);
-				result->height = atoi(height);
-
-				isSizeLine = 0;
-				i = j;
-			} else if (isIntensityLine) {
-				// read intensity
-				SMALL j = i;
-
-				char intensityLine[10];
-				SMALL intensityLineCounter = 0;
-
-				while (allData[j] != '\x0A') {
-					intensityLine[intensityLineCounter] = allData[j];
-					intensityLineCounter++;
-					j++;
-				}
-				intensityLine[intensityLineCounter] = 'n';
-
-				char *res = strstr(intensityLine, "n");
-				int pos = res - intensityLine;
-				char intensity[pos * sizeof(int)];
-				memset(intensity, 0, pos * sizeof(int));
-
-				memcpy(intensity, intensityLine, pos);
-
-				int intensityValue = atoi(intensity);
-
-				if (intensityValue != 255) {
-					*error = RET_INVALID_FORMAT;
-				}
-
-				isIntensityLine = 0;
-				i = j;
-			} else if (isDataLine) {
-				// read data
-
-				int dataSize = (result->height * result->width);
-				char* dataLine = (char*) malloc(dataSize);
-
-				memcpy(dataLine, &allData[i], dataSize);
-
-				result->data = dataLine;
-
-				isDataLine = 0;
+		switch (state) {
+		case STATE_READING_MAGIC_NUMBER:
+			if (isNewLine == false) {
+				tmpMagicNumber[tmpMagicNumberCounter] = currentChar;
+				tmpMagicNumberCounter++;
+			} else {
+				tmpMagicNumber[tmpMagicNumberCounter] = '\n';
+				*error = validateMagicNumber(tmpMagicNumber);
+				state = STATE_READING_COMMENT_LINE;
 			}
+
+			break;
+		default:
+			break;
 		}
 
-		if (allData[i] == '\x0A') {
-			lineCounter++;
-			isStartOfLine = 1;
-			isCommentLine = 0;
-		}
-
-	}
-
-	free(allData);
-
-	if (NULL == strstr(result->type, PBM_TYPE_P5)) {
-		exit(RET_UNSUPPORTED_FILE_FORMAT);
+		// end
+		isNewLine = false;
 	}
 
 	return result;
