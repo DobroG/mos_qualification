@@ -73,19 +73,11 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				char height[sizeOfHeight * sizeof(int)];
 				memset(height, 0, sizeOfHeight * sizeof(int));
 
-				for (int i = 0; i < sizeOfWidth; i++) {
-					width[i] = widthHeightLine[i];
-				}
+				memcpy(width, widthHeightLine, sizeOfWidth);
+				memcpy(height, &widthHeightLine[sizeOfWidth + 1], sizeOfHeight);
 
-				for (int i = 0; i < sizeOfHeight; i++) {
-					height[i] = widthHeightLine[sizeOfWidth + i + 1];
-				}
-
-				int w = atoi(width);
-				int h = atoi(height);
-
-				result->width = w;
-				result->height = h;
+				result->width = atoi(width);
+				result->height = atoi(height);
 
 				isSizeLine = 0;
 				i = j;
@@ -108,9 +100,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				char intensity[pos * sizeof(int)];
 				memset(intensity, 0, pos * sizeof(int));
 
-				for (int i = 0; i < pos; i++) {
-					intensity[i] = intensityLine[i];
-				}
+				memcpy(intensity, intensityLine, pos);
 
 				int intensityValue = atoi(intensity);
 
@@ -122,20 +112,15 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				i = j;
 			} else if (isDataLine) {
 				// read data
-				SMALL j = i;
 
 				int dataSize = (result->height * result->width);
 				char* dataLine = (char*) malloc(dataSize);
 
-				for (int i = 0; i < dataSize; i++) {
-					dataLine[i] = allData[j];
-					j++;
-				}
+				memcpy(dataLine, &allData[i], dataSize);
 
 				result->data = dataLine;
 
 				isDataLine = 0;
-				i = j;
 			}
 		}
 
