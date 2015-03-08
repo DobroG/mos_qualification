@@ -31,5 +31,5 @@ int main(int argc, char* argv[]) {
 
 	pbm_image_free(image);
 
-	return 0;
+	return retval;
 }
