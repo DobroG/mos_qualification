@@ -143,7 +143,68 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	return result;
 }
 
-int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
+int count_number_of_digits(int n) {
+	int count = 0;
+	while (n != 0) {
+		n /= 10;
+		count++;
+	}
 
+	return count;
+}
+
+int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
+	unsigned int offset = 0;
+
+	// GET MAGIC NUMBER
+	char magicNumber[3];
+	magicNumber[0] = img->type[0];
+	magicNumber[1] = img->type[1];
+	magicNumber[2] = img->type[2];
+
+	int widthDigits = count_number_of_digits(img->width);
+	// GET WIDTH
+	char dimensions_w[widthDigits * sizeof(int)];
+	snprintf(dimensions_w, sizeof(dimensions_w), "%d", img->width);
+
+	int heightDigits = count_number_of_digits(img->height);
+	// GET HEIGHT
+	char dimensions_h[heightDigits * sizeof(int)];
+	snprintf(dimensions_h, sizeof(dimensions_h), "%d", img->height);
+
+	// magicNumber + widthDigits + space + heightDigits + line break + opacity ( + data)
+	int imgDataSize = img->width * img->height;
+	int sizeOfData = 3 + widthDigits + 1 + heightDigits + 1 + 4 + imgDataSize;
+
+	char* dataToWrite = (char*) calloc(sizeOfData, 1);
+
+	// put magic number into data
+	memcpy(dataToWrite, magicNumber, 3);
+	offset += 3;
+
+	// put dimensions into data
+	memcpy(&dataToWrite[offset], dimensions_w, widthDigits);
+	offset += widthDigits;
+
+	dataToWrite[offset] = ' ';
+	offset += 1;
+
+	memcpy(&dataToWrite[offset], dimensions_h, heightDigits);
+	offset += heightDigits;
+
+	dataToWrite[offset] = '\n';
+	offset += 1;
+
+	// put opacity
+	char opacity[4] = { '2', '5', '5', '\n' };
+	memcpy(&dataToWrite[offset], opacity, 4);
+	offset += 4;
+
+	// put data into data
+	memcpy(&dataToWrite[offset], img->data, imgDataSize);
+
+	fwrite(dataToWrite, 1, sizeOfData, targetStream);
+
+	free(dataToWrite);
 	return 0;
 }
