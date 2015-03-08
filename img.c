@@ -149,6 +149,10 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 	free(allData);
 
+	if (NULL == strstr(result->type, PBM_TYPE_P5)) {
+		exit(RET_UNSUPPORTED_FILE_FORMAT);
+	}
+
 	return result;
 }
 
