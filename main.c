@@ -3,8 +3,9 @@
 int main(int argc, char* argv[]) {
 	int retval = 0;
 
-	if (argc < 2) {
-		printf("First argument must be filename.");
+	if (argc < 3) {
+		printf(
+				"First argument must be source filename.\nSecond must be destination filename.\n");
 		return retval;
 	}
 
@@ -25,7 +26,7 @@ int main(int argc, char* argv[]) {
 
 	pbm_image_flip(image);
 
-	FILE* outFile = fopen("flipped.pgm", "wb");
+	FILE* outFile = fopen(argv[2], "wb");
 	pbm_image_write_to_stream(image, outFile);
 	fclose(outFile);
 
