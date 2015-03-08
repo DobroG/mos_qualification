@@ -156,12 +156,6 @@ int count_number_of_digits(int n) {
 int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
 	unsigned int offset = 0;
 
-	// GET MAGIC NUMBER
-	char magicNumber[3];
-	magicNumber[0] = img->type[0];
-	magicNumber[1] = img->type[1];
-	magicNumber[2] = img->type[2];
-
 	int widthDigits = count_number_of_digits(img->width);
 	// GET WIDTH
 	char dimensions_w[widthDigits * sizeof(int)];
@@ -179,7 +173,7 @@ int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
 	char* dataToWrite = (char*) calloc(sizeOfData, 1);
 
 	// put magic number into data
-	memcpy(dataToWrite, magicNumber, 3);
+	memcpy(dataToWrite, img->type, 3);
 	offset += 3;
 
 	// put dimensions into data
