@@ -1,7 +1,7 @@
 #include "flip.h"
 
 int main(int argc, char* argv[]) {
-	int retval = 0;
+	int retval = RET_PBM_OK;
 
 	if (argc < 3) {
 		printf(
@@ -14,14 +14,14 @@ int main(int argc, char* argv[]) {
 	int* err = (int*) malloc(sizeof(int));
 	*err = 0;
 	PbmImage* image = pbm_image_load_from_stream(fp, err);
-	if (*err != 0) {
+	if (*err != RET_PBM_OK) {
+		fclose(fp);
 		retval = *err;
-	}
-	free(err);
-	fclose(fp);
-
-	if (retval != 0) {
-		return 1;
+		free(err);
+		return retval;
+	} else {
+		free(err);
+		fclose(fp);
 	}
 
 	pbm_image_flip(image);

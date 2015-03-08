@@ -8,14 +8,23 @@ void pbm_image_free(PbmImage* img) {
 
 PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	PbmImage* result = (PbmImage*) malloc(sizeof(PbmImage));
+	if (result == NULL) {
+		printf("Error allocating memory.");
+		exit(RET_OUT_OF_MEMORY);
+	}
 
-	unsigned long length;
+	unsigned long lengthOfStream;
 	fseek(stream, 0, SEEK_END);
-	length = ftell(stream);
+	lengthOfStream = ftell(stream);
 	fseek(stream, 0, SEEK_SET);
 
-	char* allData = (char*) calloc(length + 1, 1);
-	fread(allData, length, 1, stream);
+	char* allData = (char*) calloc(lengthOfStream + 1, 1);
+	if (allData == NULL) {
+		printf("Error allocating memory.");
+		exit(RET_OUT_OF_MEMORY);
+	}
+
+	fread(allData, lengthOfStream, 1, stream);
 
 	SMALL lineCounter = 1;
 
@@ -26,7 +35,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	SMALL isIntensityLine = 1;
 	SMALL isDataLine = 1;
 
-	for (int i = 0; i < length; i++) {
+	for (int i = 0; i < lengthOfStream; i++) {
 
 		if (lineCounter == 1) { // magic number line
 			result->type[magicNumberCharCounter] = allData[i];
@@ -42,7 +51,8 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				// read size
 				SMALL j = i;
 
-				char* widthHeightLine = (char*) calloc(10, 1); // size limited to 99999x9999 or similar
+				char widthHeightLine[10]; // size limited to 99999x9999 or similar
+				memset(widthHeightLine, 0, 10);
 				SMALL widthHeightLineCounter = 0;
 
 				while (allData[j] != '\x0A') {
@@ -58,8 +68,10 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				int sizeOfWidth = res - widthHeightLine; // position of space
 				int sizeOfHeight = widthHeightLineCounter - sizeOfWidth - 1;
 
-				char* width = (char*) calloc(sizeOfWidth, sizeof(int));
-				char* height = (char*) calloc(sizeOfHeight, sizeof(int));
+				char width[sizeOfWidth * sizeof(int)];
+				memset(width, 0, sizeOfWidth * sizeof(int));
+				char height[sizeOfHeight * sizeof(int)];
+				memset(height, 0, sizeOfHeight * sizeof(int));
 
 				for (int i = 0; i < sizeOfWidth; i++) {
 					width[i] = widthHeightLine[i];
@@ -75,16 +87,13 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				result->width = w;
 				result->height = h;
 
-				free(width);
-				free(height);
-				free(widthHeightLine);
 				isSizeLine = 0;
 				i = j;
 			} else if (isIntensityLine) {
 				// read intensity
 				SMALL j = i;
 
-				char* intensityLine = (char*) malloc(10);
+				char intensityLine[10];
 				SMALL intensityLineCounter = 0;
 
 				while (allData[j] != '\x0A') {
@@ -96,7 +105,8 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 				char *res = strstr(intensityLine, "n");
 				int pos = res - intensityLine;
-				char* intensity = (char*) calloc(pos, sizeof(int));
+				char intensity[pos * sizeof(int)];
+				memset(intensity, 0, pos * sizeof(int));
 
 				for (int i = 0; i < pos; i++) {
 					intensity[i] = intensityLine[i];
@@ -108,8 +118,6 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 					*error = RET_INVALID_FORMAT;
 				}
 
-				free(intensity);
-				free(intensityLine);
 				isIntensityLine = 0;
 				i = j;
 			} else if (isDataLine) {
@@ -140,6 +148,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	}
 
 	free(allData);
+
 	return result;
 }
 
@@ -166,8 +175,8 @@ int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
 	char dimensions_h[heightDigits * sizeof(int)];
 	snprintf(dimensions_h, sizeof(dimensions_h), "%d", img->height);
 
-	// magicNumber + widthDigits + space + heightDigits + line break + opacity ( + data)
 	int imgDataSize = img->width * img->height;
+	// magicNumber + widthDigits + space + heightDigits + line break + opacity  + data
 	int sizeOfData = 3 + 18 + widthDigits + 1 + heightDigits + 1 + 4
 			+ imgDataSize;
 
@@ -206,5 +215,6 @@ int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream) {
 	fwrite(dataToWrite, 1, sizeOfData, targetStream);
 
 	free(dataToWrite);
-	return 0;
+
+	return RET_PBM_OK;
 }
