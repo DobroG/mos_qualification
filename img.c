@@ -33,11 +33,17 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 	int state = STATE_READING_MAGIC_NUMBER;
 	unsigned char currentChar;
-	char tmpMagicNumber[3];
+
 	int tmpMagicNumberCounter;
 
+	char tmpSize[5];
+	memset(tmpSize, 0, 5);
+	int tmpSizeCounter;
+
 	while (!feof(stream)) {
-		fread(&currentChar, 1, 1, stream);
+		if (fread(&currentChar, 1, 1, stream) >= 0) {
+			exit(RET_EOF);
+		}
 
 		if (currentChar == '\n') {
 			isEndOfLine = true;
@@ -49,11 +55,11 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 		case STATE_READING_MAGIC_NUMBER:
 			fprintf(stderr, "STATE_READING_MAGIC_NUMBER\n");
 			if (isEndOfLine == false) {
-				tmpMagicNumber[tmpMagicNumberCounter] = currentChar;
+				result->type[tmpMagicNumberCounter] = currentChar;
 				tmpMagicNumberCounter++;
 			} else {
-				tmpMagicNumber[tmpMagicNumberCounter] = '\n';
-				*error = validateMagicNumber(tmpMagicNumber);
+				result->type[tmpMagicNumberCounter] = '\n';
+				*error = validateMagicNumber(result->type);
 				state = STATE_READING_COMMENT_LINE;
 			}
 
@@ -63,12 +69,13 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 			if (isCommentLine && isEndOfLine) {
 				isCommentLine = false;
 			} else if (isCommentLine == false) {
-				state = STATE_READING_SIZE;
+				state = STATE_READING_SIZE_W;
 			}
 
 			break;
-		case STATE_READING_SIZE:
-			fprintf(stderr, "STATE_READING_SIZE\n");
+		case STATE_READING_SIZE_W:
+			fprintf(stderr, "STATE_READING_SIZE_W\n");
+
 			break;
 		default:
 			break;

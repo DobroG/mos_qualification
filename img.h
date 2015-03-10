@@ -63,8 +63,9 @@ int pbm_image_write_to_stream(PbmImage* img, FILE* targetStream);
  */
 #define STATE_READING_MAGIC_NUMBER 1
 #define STATE_READING_COMMENT_LINE 2
-#define STATE_READING_SIZE 3
-#define STATE_READING_INTENSITY 4
-#define STATE_READING_DATA 5
+#define STATE_READING_SIZE_W 3
+#define STATE_READING_SIZE_H 4
+#define STATE_READING_INTENSITY 5
+#define STATE_READING_DATA 6
 
 #endif
