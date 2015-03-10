@@ -28,35 +28,27 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 		exit(RET_OUT_OF_MEMORY);
 	}
 
-	unsigned int lastByteIndexOfStream;
-	fseek(stream, 0, SEEK_END);
-	lastByteIndexOfStream = ftell(stream);
-	fseek(stream, 0, SEEK_SET);
+	bool isEndOfLine = false;
+	bool isCommentLine = false;
 
-	unsigned int lengthOfStream = lastByteIndexOfStream + 1;
-
-	SMALL isNewLine = false;
+	int state = STATE_READING_MAGIC_NUMBER;
 	unsigned char currentChar;
-	int state = STATE_READING_MAGIC_NUMBER; // initial state
-
-	printf("Length of stream: %d\n", lengthOfStream);
-
-	// helpers
 	char tmpMagicNumber[3];
-	memset(tmpMagicNumber, 0, 3);
-	int tmpMagicNumberCounter = 0;
+	int tmpMagicNumberCounter;
 
-	for (int i = 0; i < lastByteIndexOfStream; i++) {
+	while (!feof(stream)) {
 		fread(&currentChar, 1, 1, stream);
-		printf("%c", currentChar);
 
 		if (currentChar == '\n') {
-			isNewLine = true;
+			isEndOfLine = true;
+		} else if (currentChar == '#') {
+			isCommentLine = true;
 		}
 
 		switch (state) {
 		case STATE_READING_MAGIC_NUMBER:
-			if (isNewLine == false) {
+			fprintf(stderr, "STATE_READING_MAGIC_NUMBER\n");
+			if (isEndOfLine == false) {
 				tmpMagicNumber[tmpMagicNumberCounter] = currentChar;
 				tmpMagicNumberCounter++;
 			} else {
@@ -66,12 +58,24 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 			}
 
 			break;
+		case STATE_READING_COMMENT_LINE:
+			fprintf(stderr, "STATE_READING_COMMENT_LINE\n");
+			if (isCommentLine && isEndOfLine) {
+				isCommentLine = false;
+			} else if (isCommentLine == false) {
+				state = STATE_READING_SIZE;
+			}
+
+			break;
+		case STATE_READING_SIZE:
+			fprintf(stderr, "STATE_READING_SIZE\n");
+			break;
 		default:
 			break;
 		}
 
 		// end
-		isNewLine = false;
+		isEndOfLine = false;
 	}
 
 	return result;
