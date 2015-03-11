@@ -34,11 +34,9 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	int state = STATE_READING_MAGIC_NUMBER;
 	unsigned char currentChar;
 
-	int tmpMagicNumberCounter = 0;
-
 	char tmpSize[5];
 	memset(tmpSize, 0, 5);
-	int tmpSizeCounter = 0;
+	int tmpCounter = 0;
 
 	while (!feof(stream)) {
 		fread(&currentChar, 1, 1, stream);
@@ -52,11 +50,12 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 		switch (state) {
 		case STATE_READING_MAGIC_NUMBER:
 			if (isEndOfLine == false) {
-				result->type[tmpMagicNumberCounter] = currentChar;
-				tmpMagicNumberCounter++;
+				result->type[tmpCounter] = currentChar;
+				tmpCounter++;
 			} else {
-				result->type[tmpMagicNumberCounter] = '\n';
+				result->type[tmpCounter] = '\n';
 				*error = validateMagicNumber(result->type);
+				tmpCounter = 0;
 				state = STATE_READING_COMMENT_LINE;
 			}
 
@@ -67,33 +66,33 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 			} else if (isCommentLine == false) {
 				state = STATE_READING_SIZE_W;
 				// hit the first char of width
-				tmpSize[tmpSizeCounter] = currentChar;
-				tmpSizeCounter++;
+				tmpSize[tmpCounter] = currentChar;
+				tmpCounter++;
 			}
 
 			break;
 		case STATE_READING_SIZE_W:
 			if (currentChar != ' ') {
-				tmpSize[tmpSizeCounter] = currentChar;
-				tmpSizeCounter++;
+				tmpSize[tmpCounter] = currentChar;
+				tmpCounter++;
 			} else {
-				char croppedSize[tmpSizeCounter + 1];
-				memcpy(croppedSize, tmpSize, tmpSizeCounter + 1);
+				char croppedSize[tmpCounter];
+				memcpy(croppedSize, tmpSize, tmpCounter + 1);
 				sscanf(croppedSize, "%d", &result->width);
 
 				state = STATE_READING_SIZE_H;
 				memset(tmpSize, 0, 5);
-				tmpSizeCounter = 0;
+				tmpCounter = 0;
 			}
 
 			break;
 		case STATE_READING_SIZE_H:
 			if (currentChar != '\n') {
-				tmpSize[tmpSizeCounter] = currentChar;
-				tmpSizeCounter++;
+				tmpSize[tmpCounter] = currentChar;
+				tmpCounter++;
 			} else {
-				char croppedSize[tmpSizeCounter + 1];
-				memcpy(croppedSize, tmpSize, tmpSizeCounter + 1);
+				char croppedSize[tmpCounter];
+				memcpy(croppedSize, tmpSize, tmpCounter + 1);
 				sscanf(croppedSize, "%d", &result->height);
 
 				// we know the size of the data now, allocate memory
@@ -101,7 +100,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 				state = STATE_READING_INTENSITY;
 				memset(tmpSize, 0, 5);
-				tmpSizeCounter = 0;
+				tmpCounter = 0;
 			}
 
 			break;
@@ -113,8 +112,8 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 			break;
 		case STATE_READING_DATA:
-			result->data[tmpSizeCounter] = currentChar;
-			tmpSizeCounter++;
+			result->data[tmpCounter] = currentChar;
+			tmpCounter++;
 
 			break;
 		default:
