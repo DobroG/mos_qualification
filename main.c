@@ -10,6 +10,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	FILE* fp = fopen(argv[1], "rb");
+	if (fp == NULL) {
+		fputs("File error\n", stderr);
+		exit(RET_PBM_ERROR);
+	}
 
 	int* err = (int*) malloc(sizeof(int));
 	*err = 0;
@@ -27,6 +31,11 @@ int main(int argc, char* argv[]) {
 	pbm_image_flip(image);
 
 	FILE* outFile = fopen(argv[2], "wb");
+	if (outFile == NULL) {
+		fputs("File error\n", stderr);
+		exit(RET_PBM_ERROR);
+	}
+
 	pbm_image_write_to_stream(image, outFile);
 	fclose(outFile);
 
