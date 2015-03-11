@@ -34,16 +34,14 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 	int state = STATE_READING_MAGIC_NUMBER;
 	unsigned char currentChar;
 
-	int tmpMagicNumberCounter;
+	int tmpMagicNumberCounter = 0;
 
 	char tmpSize[5];
 	memset(tmpSize, 0, 5);
-	int tmpSizeCounter;
+	int tmpSizeCounter = 0;
 
 	while (!feof(stream)) {
-		if (fread(&currentChar, 1, 1, stream) >= 0) {
-			exit(RET_EOF);
-		}
+		fread(&currentChar, 1, 1, stream);
 
 		if (currentChar == '\n') {
 			isEndOfLine = true;
@@ -53,7 +51,6 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 		switch (state) {
 		case STATE_READING_MAGIC_NUMBER:
-			fprintf(stderr, "STATE_READING_MAGIC_NUMBER\n");
 			if (isEndOfLine == false) {
 				result->type[tmpMagicNumberCounter] = currentChar;
 				tmpMagicNumberCounter++;
@@ -65,19 +62,64 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 
 			break;
 		case STATE_READING_COMMENT_LINE:
-			fprintf(stderr, "STATE_READING_COMMENT_LINE\n");
 			if (isCommentLine && isEndOfLine) {
 				isCommentLine = false;
 			} else if (isCommentLine == false) {
 				state = STATE_READING_SIZE_W;
+				// hit the first char of width
+				tmpSize[tmpSizeCounter] = currentChar;
+				tmpSizeCounter++;
 			}
 
 			break;
 		case STATE_READING_SIZE_W:
-			fprintf(stderr, "STATE_READING_SIZE_W\n");
+			if (currentChar != ' ') {
+				tmpSize[tmpSizeCounter] = currentChar;
+				tmpSizeCounter++;
+			} else {
+				char croppedSize[tmpSizeCounter + 1];
+				memcpy(croppedSize, tmpSize, tmpSizeCounter + 1);
+				sscanf(croppedSize, "%d", &result->width);
+
+				state = STATE_READING_SIZE_H;
+				memset(tmpSize, 0, 5);
+				tmpSizeCounter = 0;
+			}
+
+			break;
+		case STATE_READING_SIZE_H:
+			if (currentChar != '\n') {
+				tmpSize[tmpSizeCounter] = currentChar;
+				tmpSizeCounter++;
+			} else {
+				char croppedSize[tmpSizeCounter + 1];
+				memcpy(croppedSize, tmpSize, tmpSizeCounter + 1);
+				sscanf(croppedSize, "%d", &result->height);
+
+				// we know the size of the data now, allocate memory
+				result->data = calloc(result->width * result->height, 1);
+
+				state = STATE_READING_INTENSITY;
+				memset(tmpSize, 0, 5);
+				tmpSizeCounter = 0;
+			}
+
+			break;
+		case STATE_READING_INTENSITY:
+			// we skip the intensity as no other types than P5 are supported
+			if (currentChar == '\n') {
+				state = STATE_READING_DATA;
+			}
+
+			break;
+		case STATE_READING_DATA:
+			result->data[tmpSizeCounter] = currentChar;
+			tmpSizeCounter++;
 
 			break;
 		default:
+			exit(RET_PBM_ERROR);
+
 			break;
 		}
 

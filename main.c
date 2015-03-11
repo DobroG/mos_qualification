@@ -24,11 +24,11 @@ int main(int argc, char* argv[]) {
 		fclose(fp);
 	}
 
-//	pbm_image_flip(image);
+	pbm_image_flip(image);
 
-//	FILE* outFile = fopen(argv[2], "wb");
-//	pbm_image_write_to_stream(image, outFile);
-//	fclose(outFile);
+	FILE* outFile = fopen(argv[2], "wb");
+	pbm_image_write_to_stream(image, outFile);
+	fclose(outFile);
 
 	pbm_image_free(image);
 
