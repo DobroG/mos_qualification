@@ -9,23 +9,23 @@ int main(int argc, char* argv[]) {
 		return retval;
 	}
 
-	FILE* fp = fopen(argv[1], "rb");
-	if (fp == NULL) {
+	FILE* inFile = fopen(argv[1], "rb");
+	if (inFile == NULL) {
 		fputs("File error\n", stderr);
 		exit(RET_PBM_ERROR);
 	}
 
 	int* err = (int*) malloc(sizeof(int));
 	*err = 0;
-	PbmImage* image = pbm_image_load_from_stream(fp, err);
+	PbmImage* image = pbm_image_load_from_stream(inFile, err);
 	if (*err != RET_PBM_OK) {
-		fclose(fp);
+		fclose(inFile);
 		retval = *err;
 		free(err);
 		return retval;
 	} else {
 		free(err);
-		fclose(fp);
+		fclose(inFile);
 	}
 
 	pbm_image_flip(image);
