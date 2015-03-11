@@ -97,7 +97,7 @@ PbmImage* pbm_image_load_from_stream(FILE* stream, int* error) {
 				sscanf(croppedSize, "%d", &result->height);
 
 				// we know the size of the data now, allocate memory
-				result->data = calloc(result->width * result->height, 1);
+				result->data = calloc((result->width * result->height) + 1, 1);
 
 				state = STATE_READING_INTENSITY;
 				memset(tmpSize, 0, 5);
